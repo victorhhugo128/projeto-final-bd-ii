@@ -1,5 +1,6 @@
 from pymongo import MongoClient
 from random import randint
+from datetime import datetime
 import utils
 
 def criar_conta_cliente(nome, cpf, data_nasc=None, email=None, telefone=None, endereco=None):
@@ -14,7 +15,40 @@ def criar_conta_cliente(nome, cpf, data_nasc=None, email=None, telefone=None, en
     conta_cliente.insert_one({'nome': nome, 'cpf': cpf, 'data_nasc': data_nasc, 'email': email, 'telefone': telefone, 'endereco': endereco, 'cartoes': []})
     
     return True
+    
+def realizar_saque(cpf, valor):
+    client = MongoClient("localhost", 27017)
+    db = client.projeto_final_bd
+    conta_cliente = db.conta_cliente
+    
+    for conta in conta_cliente.find():
+        if conta['cpf'] == cpf:
+            saldo_atual = conta.get('saldo', 0)
+            if saldo_atual >= valor:
+                novo_saldo = saldo_atual - valor
+                conta_cliente.update_one({'cpf': cpf}, {'$set': {'saldo': novo_saldo}})
+                
+                conta_cliente.update_one({'cpf': cpf}, {'$push': {'historico': {'tipo': 'saque', 'valor': valor, 'data': datetime.now()}}})
+                return True
+            else:
+                return False
+    return False
 
+def realizar_deposito(cpf, valor):
+    client = MongoClient("localhost", 27017)
+    db = client.projeto_final_bd
+    conta_cliente = db.conta_cliente
+    
+    for conta in conta_cliente.find():
+        if conta['cpf'] == cpf:
+            saldo_atual = conta.get('saldo', 0)
+            novo_saldo = saldo_atual + valor
+            conta_cliente.update_one({'cpf': cpf}, {'$set': {'saldo': novo_saldo}})
+            
+            conta_cliente.update_one({'cpf': cpf}, {'$push': {'historico': {'tipo': 'deposito', 'valor': valor, 'data': datetime.now()}}})
+            return True
+    return False
+    
 def adicionar_cartao_conta(cpf, senha):
     client = MongoClient("localhost", 27017)
     db = client.projeto_final_bd
