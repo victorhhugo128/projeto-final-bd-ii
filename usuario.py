@@ -3,68 +3,71 @@ from random import randint
 from datetime import datetime
 import utils
 
-def criar_conta_cliente(nome, cpf, data_nasc=None, email=None, telefone=None, endereco=None, valor=None):
+
+def cadastrar_cliente(nome, cpf, logradouro, cidade, estado, tipo_conta, saldo_inicial):
     client = MongoClient("localhost", 27017)
     db = client.projeto_final_bd
-    conta_cliente = db.conta_cliente
+    cadastro_cliente = db.Cliente
+    id_cliente = 1
     
-    for conta in conta_cliente.find():
+    for conta in cadastro_cliente.find():
         if conta['cpf'] == cpf:
             return False
+        id_cliente = conta["id"]
+    id_cliente += 1
     
-    conta_cliente.insert_one({'nome': nome, 'cpf': cpf, 'data_nasc': data_nasc, 'email': email, 'telefone': telefone, 'endereco': endereco, 'valor': valor, 'cartoes': []})
+    cadastro_cliente.insert_one({'id': id_cliente, 'nome': nome, 'cpf': cpf,'endereco': {"logradouro": logradouro, "cidade": cidade, "estado": estado}})
+    
+    conta_cliente = db.Conta
+    
+    conta_cliente.insert_one({'cliente_id': id_cliente, 'numero': utils.gerar_numero_conta(), 'tipo': tipo_conta, 'saldo': saldo_inicial})
     
     return True
     
 def realizar_saque(cpf, valor):
     client = MongoClient("localhost", 27017)
     db = client.projeto_final_bd
-    conta_cliente = db.conta_cliente
+    cliente = db.Cliente
     
-    for conta in conta_cliente.find():
-        if conta['cpf'] == cpf:
-            saldo_atual = conta.get('saldo', 0)
-            if saldo_atual >= valor:
-                novo_saldo = saldo_atual - valor
-                conta_cliente.update_one({'cpf': cpf}, {'$set': {'saldo': novo_saldo}})
-                
-                conta_cliente.update_one({'cpf': cpf}, {'$push': {'historico': {'tipo': 'saque', 'valor': valor, 'data': datetime.now()}}})
-                return True
-            else:
-                return False
+    instancia_cliente = cliente.find_one({'cpf': cpf})
+    
+    conta = db.Conta
+    
+    conta.update_one({'cliente_id': instancia_cliente['id']}, {'$inc': {'saldo': valor}})
+    
+    
     return False
 
 def realizar_deposito(cpf, valor):
     client = MongoClient("localhost", 27017)
     db = client.projeto_final_bd
-    conta_cliente = db.conta_cliente
+    cliente = db.Cliente
     
-    for conta in conta_cliente.find():
-        if conta['cpf'] == cpf:
-            saldo_atual = conta.get('saldo', 0)
-            novo_saldo = saldo_atual + valor
-            conta_cliente.update_one({'cpf': cpf}, {'$set': {'saldo': novo_saldo}})
-            
-            conta_cliente.update_one({'cpf': cpf}, {'$push': {'historico': {'tipo': 'deposito', 'valor': valor, 'data': datetime.now()}}})
-            return True
-    return False
+    instancia_cliente = cliente.find_one({'cpf': cpf})
     
-def adicionar_cartao_conta(cpf, senha):
+    conta = db.Conta
+    
+    conta.update_one({'cliente_id': instancia_cliente['id']}, {'$inc': {'saldo': -valor}})
+    
+    return True
+    
+def adicionar_cartao_conta(cpf, tipo_cartao, limite):
     client = MongoClient("localhost", 27017)
     db = client.projeto_final_bd
-    conta_cliente = db.conta_cliente
+    cliente = db.Cliente
     
-    for conta in conta_cliente.find():
-        if conta['cpf'] == cpf:
-            numero_cartao = utils.gerar_numero_cartao()
-            conta_cliente.update_one({'cpf': cpf}, {'$push': {'cartoes': {'numero_cartao': numero_cartao,'senha': senha, 'validade_cartao': '12/35', 'status': True}}})
-            return True
-    return False
+    cliente_instancia = cliente.find_one({'cpf': cpf})
+    
+    cartao = db.Cartao
+    
+    cartao.insert_one({"cliente_id": cliente_instancia['id'], 'numero': utils.gerar_numero_cartao(), 'tipo': tipo_cartao, 'limite': limite})
+    
+    return True
     
     
     
-if __name__ == "__main__":
-    print(criar_conta_cliente("Victor", "000.000.000-00"))
-    print(adicionar_cartao_conta("000.000.000-00", "1234"))
-    print(realizar_deposito("000.000.000-00", 10500))
-    print(realizar_saque("000.000.000-00", 5000))
+# if __name__ == "__main__":
+#     # print(criar_conta_cliente("Victor", "000.000.000-00"))
+#     # print(adicionar_cartao_conta("000.000.000-00", "1234"))
+#     # print(realizar_deposito("000.000.000-00", 10500))
+#     # print(realizar_saque("000.000.000-00", 5000))
