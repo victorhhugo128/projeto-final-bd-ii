@@ -57,7 +57,8 @@ def adicionar_cartao_conta(cpf, senha):
     for conta in conta_cliente.find():
         if conta['cpf'] == cpf:
             numero_cartao = utils.gerar_numero_cartao()
-            conta_cliente.update_one({'cpf': cpf}, {'$push': {'cartoes': {'numero_cartao': numero_cartao, 'senha': senha, 'validade_cartao': '12/35', 'status': True}}})
+            conta_cliente.update_one({'cpf': cpf}, {'$push': {'cartoes': {'numero_cartao': numero_cartao,
+                                                    'senha': senha, 'validade_cartao': '12/35', 'status': True}}})
             return True
     return False
     
