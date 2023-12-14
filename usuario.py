@@ -3,7 +3,7 @@ from random import randint
 from datetime import datetime
 import utils
 
-def criar_conta_cliente(nome, cpf, data_nasc=None, email=None, telefone=None, endereco=None):
+def criar_conta_cliente(nome, cpf, data_nasc=None, email=None, telefone=None, endereco=None, valor=None):
     client = MongoClient("localhost", 27017)
     db = client.projeto_final_bd
     conta_cliente = db.conta_cliente
@@ -12,7 +12,7 @@ def criar_conta_cliente(nome, cpf, data_nasc=None, email=None, telefone=None, en
         if conta['cpf'] == cpf:
             return False
     
-    conta_cliente.insert_one({'nome': nome, 'cpf': cpf, 'data_nasc': data_nasc, 'email': email, 'telefone': telefone, 'endereco': endereco, 'cartoes': []})
+    conta_cliente.insert_one({'nome': nome, 'cpf': cpf, 'data_nasc': data_nasc, 'email': email, 'telefone': telefone, 'endereco': endereco, 'valor': valor, 'cartoes': []})
     
     return True
     
