@@ -12,7 +12,8 @@ def criar_conta_cliente(nome, cpf, data_nasc=None, email=None, telefone=None, en
         if conta['cpf'] == cpf:
             return False
     
-    conta_cliente.insert_one({'nome': nome, 'cpf': cpf, 'data_nasc': data_nasc, 'email': email, 'telefone': telefone, 'endereco': endereco, 'valor': valor, 'cartoes': []})
+    conta_cliente.insert_one({'nome': nome, 'cpf': cpf, 'data_nasc': data_nasc, 'email': email, 'telefone': telefone,
+                              'endereco': endereco, 'valor': valor, 'cartoes': []})
     
     return True
     
